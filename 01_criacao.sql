@@ -1,4 +1,3 @@
---Script para poder reexecutar do zero
 BEGIN
     FOR t IN (SELECT table_name FROM user_tables
               WHERE table_name IN ('ITEM_PRESCRICAO', 'PRESCRICAO', 'PROCEDIMENTO',
@@ -19,7 +18,8 @@ BEGIN
 END;
 /
 
---Sequences
+
+
 CREATE SEQUENCE seq_matricula    START WITH 1001 INCREMENT BY 1 NOCACHE;
 CREATE SEQUENCE seq_consulta     START WITH 1    INCREMENT BY 1 NOCACHE;
 CREATE SEQUENCE seq_procedimento START WITH 1    INCREMENT BY 1 NOCACHE;
@@ -27,16 +27,17 @@ CREATE SEQUENCE seq_prescricao   START WITH 1    INCREMENT BY 1 NOCACHE;
 CREATE SEQUENCE seq_medicamento  START WITH 1    INCREMENT BY 1 NOCACHE;
 CREATE SEQUENCE seq_diagnostico  START WITH 1    INCREMENT BY 1 NOCACHE;
 
---Tabelas
+
+
 CREATE TABLE Localidade (
     cep     CHAR(8),
     rua     VARCHAR2(80) NOT NULL,
     cidade  VARCHAR2(50) NOT NULL,
 
     CONSTRAINT localidade_pk     PRIMARY KEY (cep),
-    CONSTRAINT localidade_cep_ck CHECK (REGEXP_LIKE(cep, '^[0-9]{8}$'
-    ))
+    CONSTRAINT localidade_cep_ck CHECK (REGEXP_LIKE(cep, '^[0-9]{8}$'))
 );
+
 
 CREATE TABLE Pessoa (
     cpf   CHAR(11),
@@ -47,6 +48,7 @@ CREATE TABLE Pessoa (
     CONSTRAINT pessoa_cep_fk FOREIGN KEY (cep) REFERENCES Localidade (cep),
     CONSTRAINT pessoa_cpf_ck CHECK (REGEXP_LIKE(cpf, '^[0-9]{11}$'))
 );
+
 
 CREATE TABLE Telefone_Pessoa (
     cpf_pessoa  CHAR(11),
@@ -69,10 +71,11 @@ CREATE TABLE Cliente (
     CONSTRAINT cliente_pref_ck CHECK (pref_contato IN ('Telefone', 'WhatsApp', 'SMS'))
 );
 
+
 CREATE TABLE Funcionario (
     cpf_pessoa      CHAR(11),
     matricula       NUMBER(6)    NOT NULL,
-    salario         NUMBER(8,2)  NOT NULL, 
+    salario         NUMBER(8,2)  NOT NULL,
     data_admissao   DATE         NOT NULL,
     situacao        VARCHAR2(10) NOT NULL,
     cpf_supervisor  CHAR(11),
@@ -87,6 +90,7 @@ CREATE TABLE Funcionario (
     CONSTRAINT funcionario_superv_ck    CHECK (cpf_supervisor IS NULL OR cpf_supervisor <> cpf_pessoa)
 );
 
+
 CREATE TABLE Veterinario (
     cpf_funcionario  CHAR(11),
     crmv             VARCHAR2(10) NOT NULL,
@@ -99,6 +103,7 @@ CREATE TABLE Veterinario (
     CONSTRAINT veterinario_crmv_ck CHECK (REGEXP_LIKE(crmv, '^[A-Z]{2}-[0-9]{4,6}$'))
 );
 
+
 CREATE TABLE Atendente (
     cpf_funcionario  CHAR(11),
     setor            VARCHAR2(15) NOT NULL,
@@ -109,13 +114,14 @@ CREATE TABLE Atendente (
     CONSTRAINT atendente_setor_ck CHECK (setor IN ('Recepção', 'Agendamento'))
 );
 
+
 CREATE TABLE Pet (
     cpf_cliente  CHAR(11),
     num          NUMBER(3),
     nome         VARCHAR2(40)  NOT NULL,
     especie      VARCHAR2(10)  NOT NULL,
     raca         VARCHAR2(40)  NOT NULL,
-    peso         NUMBER(6,3)   NOT NULL, 
+    peso         NUMBER(6,3)   NOT NULL,
 
     CONSTRAINT pet_pk         PRIMARY KEY (cpf_cliente, num),
     CONSTRAINT pet_cliente_fk FOREIGN KEY (cpf_cliente) REFERENCES Cliente (cpf_pessoa)
@@ -138,6 +144,7 @@ CREATE TABLE Recepciona (
     CONSTRAINT recepciona_periodo_ck   CHECK (data_fim IS NULL OR data_fim > data_inicio)
 );
 
+
 CREATE TABLE Consulta (
     id_consulta      NUMBER(6),
     cpf_cliente_pet  CHAR(11)     NOT NULL,
@@ -155,6 +162,7 @@ CREATE TABLE Consulta (
     CONSTRAINT consulta_situacao_ck CHECK (situacao IN ('Agendada', 'Realizada', 'Cancelada'))
 );
 
+
 CREATE TABLE Procedimento (
     id_procedimento  NUMBER(6),
     id_consulta      NUMBER(6)     NOT NULL,
@@ -166,6 +174,7 @@ CREATE TABLE Procedimento (
                                         ON DELETE CASCADE
 );
 
+
 CREATE TABLE Prescricao (
     id_prescricao  NUMBER(6),
     id_consulta    NUMBER(6)    NOT NULL,
@@ -174,26 +183,30 @@ CREATE TABLE Prescricao (
 
     CONSTRAINT prescricao_pk          PRIMARY KEY (id_prescricao),
     CONSTRAINT prescricao_consulta_fk FOREIGN KEY (id_consulta) REFERENCES Consulta (id_consulta)
-                                      ON DELETE CASCADE
+                                      ON DELETE CASCADE,
+    CONSTRAINT prescricao_tipo_ck     CHECK (tipo_receita IN ('Simples', 'Controle Especial', 'Antimicrobiano'))
 );
+
 
 CREATE TABLE Medicamento (
     id_medicamento      NUMBER(6),
-    nome                VARCHAR2(60) NOT NULL,
     fabricante          VARCHAR2(40) NOT NULL,
     quantidade_estoque  NUMBER(6)    NOT NULL,
-
+    nome                VARCHAR2(40) NOT NULL,
     CONSTRAINT medicamento_pk         PRIMARY KEY (id_medicamento),
-    CONSTRAINT medicamento_nome_uk    UNIQUE (nome, fabricante),
+    CONSTRAINT medicamento_nome_uk    UNIQUE (nome,fabricante),
     CONSTRAINT medicamento_estoque_ck CHECK (quantidade_estoque >= 0)
 );
+
 
 CREATE TABLE Diagnostico (
     id_diagnostico  NUMBER(6),
     descricao       VARCHAR2(80) NOT NULL,
 
-    CONSTRAINT diagnostico_pk  PRIMARY KEY (id_diagnostico),
+    CONSTRAINT diagnostico_pk        PRIMARY KEY (id_diagnostico),
+    CONSTRAINT diagnostico_descr_uk  UNIQUE (descricao)
 );
+
 
 CREATE TABLE Item_prescricao (
     id_prescricao         NUMBER(6),
@@ -209,6 +222,8 @@ CREATE TABLE Item_prescricao (
                                            ON DELETE CASCADE,
     CONSTRAINT item_prescricao_med_fk      FOREIGN KEY (id_medicamento) REFERENCES Medicamento (id_medicamento),
     CONSTRAINT item_prescricao_diag_fk     FOREIGN KEY (id_diagnostico) REFERENCES Diagnostico (id_diagnostico),
-    CONSTRAINT item_prescricao_via_ck      CHECK (via_adm IN ('Oral', 'Tópica', 'Otológica', 'Oftálmica','Subcutânea', 'Intramuscular', 'Intravenosa')),
+    CONSTRAINT item_prescricao_via_ck      CHECK (via_adm IN ('Oral', 'Tópica', 'Otológica', 'Oftálmica',
+                                                              'Subcutânea', 'Intramuscular', 'Intravenosa')),
     CONSTRAINT item_prescricao_qtd_ck      CHECK (quantidade_prescrita > 0)
 );
+
