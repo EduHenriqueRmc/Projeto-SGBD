@@ -192,7 +192,7 @@ CREATE TABLE Medicamento (
     id_medicamento      NUMBER(6),
     fabricante          VARCHAR2(40) NOT NULL,
     quantidade_estoque  NUMBER(6)    NOT NULL,
-    nome                VARCHAR2(40) NOT NULL,
+    nome                VARCHAR2(60) NOT NULL,
     CONSTRAINT medicamento_pk         PRIMARY KEY (id_medicamento),
     CONSTRAINT medicamento_nome_uk    UNIQUE (nome,fabricante),
     CONSTRAINT medicamento_estoque_ck CHECK (quantidade_estoque >= 0)
